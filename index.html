@@ -680,7 +680,29 @@
   <div id="modalRoot"></div>
 
 
-  <script src="script.js"></script>
+  <!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+  // Paste YOUR config object from Firebase console here
+  const firebaseConfig = {
+    apiKey: "AIzaSyDC_P_Kb0wk75NFoXob_CsdYqhp_vLoC0M",
+    authDomain: "taskforge-9c9fb.firebaseapp.com",
+    projectId: "taskforge-9c9fb",
+    storageBucket: "taskforge-9c9fb.appspot.com",
+    messagingSenderId: "PASTE_YOURS",
+    appId: "PASTE_YOURS"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const firestore = getFirestore(app);
+
+  // Expose Firestore functions to script.js
+  window._firebase = { doc, getDoc, setDoc, firestore };
+  window._firebaseReady = true;
+</script>
+<script src="script.js"></script>
 
 </body>
 </html>

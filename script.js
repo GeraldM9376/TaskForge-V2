@@ -479,45 +479,82 @@ function ensureDBShape(data){
   return data;
 }
 
+// === FIREBASE: sync cache + async loader ===
+let _dbCache = null;
+let _dbLoading = false;
 
-function db(){
-
-  const stored = localStorage.getItem(STORAGE_KEY);
-
-  if(!stored){
-    const seeded = seedDB();
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(seeded)
-    );
-
-    return seeded;
+async function loadDB(){
+  if (_dbCache) return _dbCache;
+  if (_dbLoading) {
+    while (_dbLoading) await new Promise(r => setTimeout(r, 50));
+    return _dbCache;
   }
 
-  try{
-    return ensureDBShape(
-      JSON.parse(stored)
-    );
-  }catch(error){
+  _dbLoading = true;
 
-    const seeded = seedDB();
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(seeded)
-    );
-
-    return seeded;
+  let waited = 0;
+  while (!window._firebaseReady && waited < 5000) {
+    await new Promise(r => setTimeout(r, 50));
+    waited += 50;
   }
+
+  if (!window._firebaseReady) {
+    console.warn("Firebase not loaded — using localStorage.");
+    const stored = localStorage.getItem(STORAGE_KEY);
+    _dbCache = stored ? ensureDBShape(JSON.parse(stored)) : seedDB();
+    _dbLoading = false;
+    return _dbCache;
+  }
+
+  const { doc, getDoc, setDoc, firestore } = window._firebase;
+  const docRef = doc(firestore, "taskforge", "main");
+
+  try {
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      _dbCache = ensureDBShape(snap.data());
+    } else {
+      const seeded = seedDB();
+      _dbCache = seeded;
+      await setDoc(docRef, seeded);
+    }
+  } catch (err) {
+    console.error("Firestore read error:", err);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    _dbCache = stored ? ensureDBShape(JSON.parse(stored)) : seedDB();
+  }
+
+  _dbLoading = false;
+  return _dbCache;
 }
 
+// Synchronous accessor — returns cached data (must call loadDB() first)
+function db(){
+  if (!_dbCache) {
+    // Cache not ready yet. Return empty shape to avoid crashes.
+    return ensureDBShape({});
+  }
+  return _dbCache;
+}
 
-function saveDB(data){
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(ensureDBShape(data))
-  );
+// Async save
+async function saveDB(data){
+  const shaped = ensureDBShape(data);
+  _dbCache = shaped;
+
+  if (!window._firebaseReady) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(shaped));
+    return;
+  }
+
+  try {
+    const { doc, setDoc, firestore } = window._firebase;
+    const docRef = doc(firestore, "taskforge", "main");
+    await setDoc(docRef, shaped);
+  } catch (err) {
+    console.error("Firestore write error:", err);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(shaped));
+  }
 }
 
 
@@ -8605,7 +8642,7 @@ function registerUser(event){
    EVENT LISTENERS
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded",() => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   /* Auth tabs */
 
@@ -8858,7 +8895,8 @@ document.addEventListener("DOMContentLoaded",() => {
   /* === NEW: live level fees on register form === */
   renderRegisterLevelFees();
 
-  /* Existing session */
+  /* === FIREBASE: load data before rendering === */
+   await loadDB();
 
   if(currentUser()){
     showApp();
