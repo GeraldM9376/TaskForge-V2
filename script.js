@@ -5504,19 +5504,27 @@ function renderAdminUsers(){
                     <div class="actions">
 
                       <button
-                        class="btn ghost small-btn"
-                        type="button"
-                        onclick="openEditUser('${user.id}')"
+                         class="btn ghost small-btn"
+                         type="button"
+                         onclick="openEditUser('${user.id}')"
                       >
                         Edit
                       </button>
 
                       <button
-                        class="btn secondary small-btn"
-                        type="button"
-                        onclick="resetUserDailyLimit('${user.id}')"
+                         class="btn secondary small-btn"
+                         type="button"
+                         onclick="resetUserDailyLimit('${user.id}')"
                       >
-                        Reset daily limit
+                         Reset daily limit
+                      </button>
+
+                      <button
+                         class="btn danger small-btn"
+                         type="button"
+                         onclick="openDeleteUser('${user.id}')"
+                      >
+                        Delete
                       </button>
 
                     </div>
@@ -5737,6 +5745,115 @@ function saveUser(event,userId){
 
   toast("User updated.");
 
+  renderPage("admin-users");
+}
+
+/* === NEW: Delete a single user's full record === */
+
+function openDeleteUser(userId){
+  if(!requireAdmin()) return;
+
+  const user = findUser(userId);
+  if(!user) return;
+
+  /* Count what will be deleted so admin sees the full impact */
+  const data = db();
+  const bidCount = data.bids.filter(x => x.userId === userId).length;
+  const subCount = data.submissions.filter(x => x.userId === userId).length;
+  const txCount = data.transactions.filter(x => x.userId === userId).length;
+  const wdCount = data.withdrawals.filter(x => x.userId === userId).length;
+  const reqCount = data.paymentRequests.filter(x => x.userId === userId).length;
+  const refCount = data.referrals.filter(
+    x => x.referrerId === userId || x.referredUserId === userId
+  ).length;
+
+  document.getElementById("modalRoot").innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <div class="modal-head">
+          <h3 style="color:#b8324b">Delete user — permanent</h3>
+          <button class="modal-close" type="button" onclick="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="notice danger">
+            <strong>You are about to permanently delete:</strong>
+            <br>
+            <b>${escapeHTML(user.name)}</b> (${escapeHTML(user.email)})
+          </div>
+
+          <div class="kpi-strip" style="margin-top:12px">
+            <div class="kpi"><span>Bids</span><b>${bidCount}</b></div>
+            <div class="kpi"><span>Submissions</span><b>${subCount}</b></div>
+            <div class="kpi"><span>Transactions</span><b>${txCount}</b></div>
+          </div>
+          <div class="kpi-strip" style="margin-top:8px">
+            <div class="kpi"><span>Withdrawals</span><b>${wdCount}</b></div>
+            <div class="kpi"><span>Payment requests</span><b>${reqCount}</b></div>
+            <div class="kpi"><span>Referrals</span><b>${refCount}</b></div>
+          </div>
+
+          <div class="notice warning" style="margin-top:12px">
+            This will remove the account <b>and</b> every record linked to it.
+            This cannot be undone.
+          </div>
+
+          <label style="display:block;margin-top:14px">
+            Type <b>DELETE</b> below to confirm:
+            <input
+              id="deleteUserConfirm"
+              required
+              placeholder="DELETE"
+              style="text-transform:uppercase"
+            >
+          </label>
+        </div>
+
+        <div class="modal-foot">
+          <button class="btn ghost" type="button" onclick="closeModal()">Cancel</button>
+          <button class="btn danger" type="button" onclick="confirmDeleteUser('${user.id}')">
+            Delete permanently
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function confirmDeleteUser(userId){
+  if(!requireAdmin()) return;
+
+  const typed = (document.getElementById("deleteUserConfirm")?.value || "").trim().toUpperCase();
+  if(typed !== "DELETE"){
+    toast("Type DELETE exactly to confirm.","error");
+    return;
+  }
+
+  const data = db();
+  const user = data.users.find(x => x.id === userId);
+  if(!user){ toast("User not found.","error"); return; }
+
+  /* Remove the user */
+  data.users = data.users.filter(x => x.id !== userId);
+
+  /* Remove everything linked to them */
+  data.bids = data.bids.filter(x => x.userId !== userId);
+  data.submissions = data.submissions.filter(x => x.userId !== userId);
+  data.transactions = data.transactions.filter(x => x.userId !== userId);
+  data.withdrawals = data.withdrawals.filter(x => x.userId !== userId);
+  data.paymentRequests = data.paymentRequests.filter(x => x.userId !== userId);
+  data.notifications = data.notifications.filter(x => x.userId !== userId);
+  data.training = data.training.filter(x => x.userId !== userId);
+
+  /* Referrals where this user was either side */
+  data.referrals = data.referrals.filter(
+    x => x.referrerId !== userId && x.referredUserId !== userId
+  );
+
+  saveDB(data);
+
+  closeModal();
+  toast(`Deleted ${user.name} and all their records.`);
   renderPage("admin-users");
 }
 
@@ -9621,3 +9738,5 @@ window.confirmRejectRegistration = confirmRejectRegistration;
 window.renderRegisterLevelFees = renderRegisterLevelFees;
 window.confirmRejectTraining = confirmRejectTraining;
 window.confirmRejectUpgrade = confirmRejectUpgrade;
+window.openDeleteUser = openDeleteUser;
+window.confirmDeleteUser = confirmDeleteUser;
