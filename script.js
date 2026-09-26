@@ -6550,15 +6550,16 @@ function renderAdminPayments(){
                 <td>
                   ${
                     (() => {
-                      const req = data.paymentRequests.find(
-                        x => x.userId === user.id && x.kind === "registration" && x.status === "pending"
-                      );
-                      return req && req.mpesaCode
-                        ? `<span class="code-pill">${escapeHTML(req.mpesaCode)}</span>`
-                        : `<span class="muted">—</span>`;
-                    })()
-                  }
-                </td>
+                      const reqs = data.paymentRequests.filter(
+                         x => x.userId === user.id && x.kind === "registration" && x.status === "pending"
+                    );
+                    const req = reqs.find(x => x.mpesaCode) || reqs[0];
+                    return req && req.mpesaCode
+                      ? `<span class="code-pill">${escapeHTML(req.mpesaCode)}</span>`
+                      : `<span class="muted">—</span>`;
+                  })()
+                }
+              </td>
 
                 <td>
                   ${
@@ -8582,28 +8583,6 @@ function registerUser(event){
     }
 
   }
-
-
-  /* Registration payment request (pending admin verification) */
-
-  data.paymentRequests.push({
-
-    id:uid("preq"),
-
-    userId:user.id,
-
-    kind:"registration",
-
-    amount:levelFee(user.level),
-
-    description:
-      `${levelName(user.level)} registration payment`,
-
-    status:"pending",
-
-    createdAt:Date.now()
-
-  });
 
 
   data.transactions.push({
