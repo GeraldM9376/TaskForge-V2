@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskForge — Work & Task Management</title>
+  <meta
+    name="description"
+    content="TaskForge professional task marketplace and submission dashboard."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <div id="toastRoot" class="toast-root"></div>
+
+  <!-- =========================================================
+       AUTHENTICATION
+  ========================================================== -->
+  <section id="authView" class="auth-shell">
+
+    <div class="auth-brand-panel">
+
+      <div class="brand large">
+        <span class="brand-mark">T</span>
+        TaskForge
+      </div>
+
+      <p class="eyebrow">TASK MANAGEMENT PLATFORM</p>
+
+      <h1>
+        Work smarter.<br>
+        <span>Submit. Track. Get paid.</span>
+      </h1>
+
+      <p class="muted light">
+        A professional workspace for clients, task contributors and
+        administrators.
+      </p>
+
+      <div class="auth-feature-list">
+        <div><span>✓</span> Shared task marketplace</div>
+        <div><span>✓</span> Simple task bidding</div>
+        <div><span>✓</span> Six-hour task windows</div>
+        <div><span>✓</span> Submission and review</div>
+        <div><span>✓</span> Earnings and withdrawals</div>
+        <div><span>✓</span> Referral tracking</div>
+        <div><span>✓</span> Professional training options</div>
+      </div>
+
+      <p class="muted light" style="margin-top:24px;font-size:12px">
+        Need help?
+        <a
+          href="mailto:deportmo@gmail.com"
+          style="color:#4fe0bc;font-weight:700"
+        >
+          Contact admin — deportmo@gmail.com
+        </a>
+      </p>
+
+    </div>
+
+
+    <div class="auth-card-wrap">
+
+      <div class="auth-card">
+
+        <div class="auth-tabs">
+          <button
+            class="auth-tab active"
+            type="button"
+            data-auth="login"
+          >
+            Login
+          </button>
+
+          <button
+            class="auth-tab"
+            type="button"
+            data-auth="register"
+          >
+            Create account
+          </button>
+        </div>
+
+
+        <!-- M-PESA NOTICE (shown on both login & register) -->
+        <div class="auth-mpesa-notice">
+          <strong>M-Pesa payment notice:</strong>
+          Only use a valid email and phone number linked to your
+          M-Pesa account for all payments.
+        </div>
+
+
+        <!-- LOGIN -->
+        <form id="loginForm" class="auth-form">
+
+          <div class="form-heading">
+            <h2>Welcome back</h2>
+            <p>Sign in to your TaskForge account.</p>
+          </div>
+
+          <label>
+            Email
+            <input
+              id="loginEmail"
+              type="email"
+              required
+              placeholder="you@example.com"
+              autocomplete="email"
+            >
+          </label>
+
+          <label>
+            Password
+            <input
+              id="loginPassword"
+              type="password"
+              required
+              placeholder="••••••••"
+              autocomplete="current-password"
+            >
+          </label>
+
+          <button
+            class="btn primary full"
+            type="submit"
+          >
+            Sign in
+          </button>
+
+
+          <p class="auth-note">
+            admin:
+            <b>sign_in: </b>
+
+            <b>Mixed</b>
+          </p>
+
+          <p class="auth-note">
+            <a
+              href="mailto:deportmo@gmail.com"
+              style="color:#16866f;font-weight:700"
+            >
+              Contact admin — deportmo@gmail.com
+            </a>
+          </p>
+
+        </form>
+
+
+        <!-- REGISTER -->
+        <form id="registerForm" class="auth-form hidden">
+
+          <div class="form-heading">
+            <h2>Create your account</h2>
+
+            <p>
+              Choose a level and access the shared task marketplace.
+            </p>
+          </div>
+
+          <label>
+            Full name
+            <input
+              id="regName"
+              required
+              placeholder="Your full name"
+            >
+          </label>
+
+          <label>
+            Email
+            <input
+              id="regEmail"
+              type="email"
+              required
+              placeholder="you@example.com"
+              autocomplete="email"
+            >
+            <small class="field-hint">
+              Must be lowercase and a valid email address.
+            </small>
+          </label>
+
+          <label>
+            M-Pesa phone number
+            <input
+              id="regPhone"
+              required
+              placeholder="+254712345678"
+              inputmode="tel"
+              autocomplete="tel"
+            >
+            <small class="field-hint">
+              Format: +254 followed by 9 digits (must match your M-Pesa line).
+            </small>
+          </label>
+
+          <label>
+            Password
+            <input
+              id="regPassword"
+              type="password"
+              minlength="6"
+              required
+              placeholder="At least 6 characters"
+              autocomplete="new-password"
+            >
+          </label>
+
+          <label>
+            Referral code
+            <span class="optional">optional</span>
+
+            <input
+              id="regReferral"
+              placeholder="e.g. TF8K2Q"
+            >
+          </label>
+
+
+          <div
+            class="level-picker"
+            id="regLevelPicker"
+          >
+
+            <button
+              type="button"
+              data-level="1"
+              class="level-choice active"
+            >
+              <b>Level 1</b>
+              <span>KSh 500</span>
+              <small>Payment window: 7 days</small>
+            </button>
+
+            <button
+              type="button"
+              data-level="2"
+              class="level-choice"
+            >
+              <b>Level 2</b>
+              <span>KSh 1,000</span>
+              <small>Payment window: 3 days</small>
+            </button>
+
+            <button
+              type="button"
+              data-level="3"
+              class="level-choice"
+            >
+              <b>Level 3</b>
+              <span>KSh 2,000</span>
+              <small>Payment window: 24 hours</small>
+            </button>
+
+          </div>
+
+
+          <button
+            class="btn primary full"
+            type="submit"
+          >
+            Create account
+          </button>
+
+
+          <p class="auth-note">
+            Registration payments remain pending until confirmed by an
+            administrator. You can view marketplace tasks immediately,
+            but bidding is enabled only after registration verification.
+          </p>
+
+          <p class="auth-note">
+            <a
+              href="mailto:deportmo@gmail.com"
+              style="color:#16866f;font-weight:700"
+            >
+              Contact admin — deportmo@gmail.com
+            </a>
+          </p>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =========================================================
+       APPLICATION
+  ========================================================== -->
+  <section
+    id="appView"
+    class="app-shell hidden"
+  >
+
+    <!-- SIDEBAR -->
+    <aside
+      class="sidebar"
+      id="sidebar"
+    >
+
+      <div class="sidebar-top">
+
+        <div class="brand">
+          <span class="brand-mark">T</span>
+          TaskForge
+        </div>
+
+        <button
+          class="mobile-close"
+          id="closeSidebar"
+          type="button"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="profile-mini">
+
+        <div
+          class="avatar"
+          id="sideAvatar"
+        >
+          GM
+        </div>
+
+        <div>
+          <strong id="sideName">User</strong>
+          <span id="sideRole">Contributor</span>
+        </div>
+
+      </div>
+
+
+      <!-- USER NAVIGATION -->
+      <nav
+        id="userNav"
+        class="nav"
+      >
+
+        <button
+          class="nav-item active"
+          data-page="dashboard"
+          type="button"
+        >
+          <span>⌂</span>
+          Dashboard
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="tasks"
+          type="button"
+        >
+          <span>▤</span>
+          Available Tasks
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="my-tasks"
+          type="button"
+        >
+          <span>✓</span>
+          My Tasks
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="submissions"
+          type="button"
+        >
+          <span>↥</span>
+          My Submissions
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="earnings"
+          type="button"
+        >
+          <span>◈</span>
+          Earnings & Withdrawals
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="training"
+          type="button"
+        >
+          <span>✎</span>
+          Apply for Training
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="upgrade"
+          type="button"
+        >
+          <span>↑</span>
+          Upgrade Level
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="referrals"
+          type="button"
+        >
+          <span>♧</span>
+          Referrals
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="transactions"
+          type="button"
+        >
+          <span>↔</span>
+          Transactions
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="buy-bids"
+          type="button"
+        >
+        <span>◆</span>
+          Buy Bids
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="profile"
+          type="button"
+        >
+          <span>◎</span>
+          Profile
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="contact"
+          type="button"
+        >
+          <span>✉</span>
+          Contact Admin
+        </button>
+
+      </nav>
+
+
+      <!-- ADMIN NAVIGATION -->
+      <nav
+        id="adminNav"
+        class="nav hidden"
+      >
+
+        <div class="nav-label">
+          ADMIN
+        </div>
+
+        <button
+          class="nav-item active"
+          data-page="admin-dashboard"
+          type="button"
+        >
+          <span>⌂</span>
+          Admin Dashboard
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-tasks"
+          type="button"
+        >
+          <span>▤</span>
+          Manage Tasks
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-users"
+          type="button"
+        >
+          <span>♙</span>
+          Users
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-submissions"
+          type="button"
+        >
+          <span>✓</span>
+          Submissions
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-payments"
+          type="button"
+        >
+          <span>◈</span>
+          Payments
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-payment-settings"
+          type="button"
+        >
+          <span>⚙</span>
+          Payment Settings
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-bid-packages"
+          type="button"
+        >
+        <span>◈</span>
+          Bid Packages
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-bid-balances"
+          type="button"
+        >
+        <span>◆</span>
+          Bid Balances
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-referrals"
+          type="button"
+        >
+          <span>♧</span>
+          Referrals
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-transactions"
+          type="button"
+        >
+          <span>↔</span>
+          Transactions
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="admin-training"
+          type="button"
+        >
+          <span>✎</span>
+          Training
+        </button>
+
+      </nav>
+
+
+      <div class="sidebar-bottom">
+
+        <div class="system-status">
+          <span></span>
+          System online
+        </div>
+
+        <button
+          class="nav-item"
+          id="logoutBtn"
+          type="button"
+        >
+          <span>↪</span>
+          Log out
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <header class="topbar">
+
+        <button
+          class="hamburger"
+          id="openSidebar"
+          type="button"
+        >
+          ☰
+        </button>
+
+        <div
+          class="crumb"
+          id="pageCrumb"
+        >
+          Dashboard
+        </div>
+
+        <div class="topbar-actions">
+
+          <a
+            class="icon-btn"
+            href="mailto:deportmo@gmail.com"
+            title="Contact admin — deportmo@gmail.com"
+            style="display:grid;place-items:center;text-decoration:none"
+          >
+            ✉
+          </a>
+
+          <button
+            class="icon-btn"
+            id="notificationBtn"
+            title="Notifications"
+            type="button"
+          >
+            ♢
+            <i id="notificationDot"></i>
+          </button>
+
+
+          <div class="top-user">
+
+            <div
+              class="avatar small"
+              id="topAvatar"
+            >
+              GM
+            </div>
+
+            <div class="top-user-text">
+
+              <b id="topName">User</b>
+
+              <span id="topLevel">
+                Level 1
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <div
+        id="pageContent"
+        class="page-content"
+      ></div>
+
+    </main>
+
+  </section>
+
+
+  <!-- MODALS -->
+  <div id="modalRoot"></div>
+
+
+  <script src="script.js"></script>
+
+</body>
+</html>
