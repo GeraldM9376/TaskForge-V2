@@ -5889,6 +5889,41 @@ function resetUserDailyLimit(userId){
   renderPage(activePage);
 }
 
+/* === NEW: Payout details (for withdrawals) === */
+
+function savePayoutDetails(event){
+  event.preventDefault();
+
+  const user = currentUser();
+  if(!user) return;
+
+  const name = document.getElementById("payoutName").value.trim();
+  const phone = normalizePhone(document.getElementById("payoutPhone").value);
+
+  if(!name){
+    toast("Please enter the full name for payouts.","error");
+    return;
+  }
+
+  if(!isValidPhone(phone)){
+    toast("Please enter a valid M-Pesa phone (+254...).","error");
+    return;
+  }
+
+  const data = db();
+  const dbUser = data.users.find(u => u.id === user.id);
+  if(!dbUser) return;
+
+  dbUser.payoutName = name;
+  dbUser.payoutPhone = phone;
+  dbUser.payoutUpdatedAt = Date.now();
+
+  saveDB(data);
+
+  toast("Payout details saved.");
+  renderPage("earnings");
+}
+
 
 /* =========================================================
    ADMIN SUBMISSIONS
