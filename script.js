@@ -483,6 +483,7 @@ function ensureDBShape(data){
 
   data.tasks.forEach(t => {
     if(typeof t.bidCost !== "number") t.bidCost = 2;
+    if(!Array.isArray(t.maskedFor)) t.maskedFor = [];
   });
 
   return data;
@@ -684,11 +685,24 @@ function currentUserSubmissions(){
   Level still exists for registration/payment information.
 */
 
-function accessibleTasks(){
+function accessibleTasks(user){
+  const data = db();
 
-  return db().tasks.filter(
-    task => task.status === "active"
-  );
+  return data.tasks.filter(task => {
+
+    if(task.status !== "active") return false;
+
+    /* === AUTO-MASK: hide tasks this user has already completed === */
+    if(
+      user &&
+      Array.isArray(task.maskedFor) &&
+      task.maskedFor.includes(user.id)
+    ){
+      return false;
+    }
+
+    return true;
+  });
 }
 
 
@@ -5187,14 +5201,30 @@ function saveTask(event,taskId){
         item => item.id === taskId
       );
 
-    if(task){
-        task.title = title;
-        task.payment = payment;
-        task.level = level;
-        task.status = status;
-        task.description = description;
-        task.bidCost = bidCost;
-        task.updatedAt = Date.now();
+        if(task){
+
+      /* === AUTO-UNMASK: detect substantive edits === */
+      const substantiveChange =
+        task.title !== title ||
+        task.description !== description ||
+        Number(task.payment) !== Number(payment) ||
+        Number(task.level) !== Number(level) ||
+        Number(task.bidCost) !== Number(bidCost);
+
+      task.title = title;
+      task.payment = payment;
+      task.level = level;
+      task.status = status;
+      task.description = description;
+      task.bidCost = bidCost;
+      task.updatedAt = Date.now();
+
+      /* === AUTO-UNMASK: any content change clears all masks === */
+      if(substantiveChange && Array.isArray(task.maskedFor) && task.maskedFor.length){
+        const cleared = task.maskedFor.length;
+        task.maskedFor = [];
+        toast(`Task updated. ${cleared} masked user(s) can now see it again.`);
+      }
 
     }
 
@@ -6592,6 +6622,15 @@ function reviewSubmission(submissionId,status,rejectionReason=null){
       payment;
 
     submission.approvedAt = Date.now();
+
+    /* === AUTO-MASK: user won't see this task again until admin edits it === */
+    if(task){
+      if(!Array.isArray(task.maskedFor)) task.maskedFor = [];
+      if(!task.maskedFor.includes(user.id)){
+        task.maskedFor.push(user.id);
+      }
+    }
+
 
     // Payment window based on the user's level
     submission.paymentWindowText =
