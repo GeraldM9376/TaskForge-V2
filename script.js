@@ -442,6 +442,15 @@ function ensureDBShape(data){
   data.training = Array.isArray(data.training) ? data.training : [];
   data.paymentRequests = Array.isArray(data.paymentRequests) ? data.paymentRequests : [];
   data.notifications = Array.isArray(data.notifications) ? data.notifications : [];
+  data.users.forEach(u => {
+    if(typeof u.bidBalance !== "number") u.bidBalance = 0;
+    if(typeof u.registrationConfirmed !== "boolean"){
+      u.registrationConfirmed = !!u.regPaid;
+    }
+    /* === NEW: payout fields === */
+    if(typeof u.payoutName !== "string") u.payoutName = "";
+    if(typeof u.payoutPhone !== "string") u.payoutPhone = "";
+   });
 
   if(!data.settings || typeof data.settings !== "object"){
     data.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
@@ -2699,6 +2708,68 @@ function renderEarnings(){
 
     </div>
 
+    
+
+    <!-- === NEW: Payout details === -->
+    <div class="panel" style="margin-bottom:18px">
+      <div class="panel-head">
+        <h3>Payout Details</h3>
+        <span>Phone and name for receiving withdrawal payments</span>
+      </div>
+      <div class="panel-body">
+        ${
+          (user.payoutName && user.payoutPhone)
+            ? `
+              <div class="notice" style="margin-bottom:14px">
+                <strong>Current payout details:</strong>
+                ${escapeHTML(user.payoutName)} —
+                <span class="code-pill">${escapeHTML(user.payoutPhone)}</span>
+                <br>
+                <span style="font-size:10px;color:#5a6d68">You can update these anytime below.</span>
+              </div>
+            `
+            : `
+              <div class="notice warning" style="margin-bottom:14px">
+                <strong>Payout details not set.</strong>
+                Please set the phone number and name to receive withdrawal payments.
+              </div>
+            `
+        }
+
+        <form onsubmit="savePayoutDetails(event)">
+          <div class="form-grid">
+            <label>
+              Payout name (as registered on M-Pesa)
+              <input
+                id="payoutName"
+                required
+                value="${escapeHTML(user.payoutName || "")}"
+                placeholder="e.g. Gerald Maina"
+              >
+            </label>
+            <label>
+              Payout phone (+254...)
+              <input
+                id="payoutPhone"
+                required
+                value="${escapeHTML(user.payoutPhone || "")}"
+                placeholder="+254712345678"
+              >
+              <small class="field-hint">
+                The M-Pesa line that should receive your withdrawal.
+              </small>
+            </label>
+          </div>
+
+          <button class="btn primary" type="submit">
+            Save payout details
+          </button>
+        </form>
+      </div>
+    </div>
+
+
+
 
     <div class="cards">
 
@@ -2908,6 +2979,24 @@ function openWithdrawalModal(){
                 ${money(user.balance)}
               </strong>
             </div>
+
+            ${
+              (!user.payoutName || !user.payoutPhone)
+                ? `
+                  <div class="notice warning">
+                    <strong>Payout details not set.</strong>
+                    You can still request a withdrawal, but please set your payout
+                    phone and name on the Earnings page so payment can be sent.
+                  </div>
+                `
+                : `
+                  <div class="notice info">
+                    Payout will be sent to
+                    <strong>${escapeHTML(user.payoutName)}</strong>
+                    (${escapeHTML(user.payoutPhone)}).
+                  </div>
+                `
+            }
 
             <div class="notice info">
               <strong>Expected payment window:</strong>
@@ -5416,8 +5505,9 @@ function renderAdminUsers(){
               <th>Registration</th>
               <th>Today's Bids</th>
               <th>Balance</th>
+              <th>Payout</th>
               <th>Actions</th>
-            </tr>
+            </tr>  
 
           </thead>
 
@@ -5500,7 +5590,19 @@ function renderAdminUsers(){
                   </td>
 
                   <td>
+                    ${
+                      (user.payoutName && user.payoutPhone)
+                        ? `
+                          <div class="user-credentials">
+                            name: ${escapeHTML(user.payoutName)}<br>
+                            phone: ${escapeHTML(user.payoutPhone)}
+                          </div>
+                        `
+                        : `<span class="muted">Not set</span>`
+                    }
+                  </td>
 
+                  <td>
                     <div class="actions">
 
                       <button
@@ -6955,22 +7057,40 @@ function renderAdminPayments(){
           ? `
             <table class="table">
               <thead>
-                <tr>
+
+                 <tr>
                   <th>User</th>
+                  <th>Payout Name</th>
+                  <th>Payout Phone</th>
                   <th>Amount</th>
                   <th>Requested</th>
                   <th>Expected Window</th>
                   <th>Status</th>
                   <th>Action</th>
-                </tr>
+                </tr> 
+
               </thead>
               <tbody>
                 ${withdrawals.map(item => {
                   const user = findUser(item.userId);
                   return `
-                    <tr>
+                      <tr>
                       <td>${escapeHTML(user?.name || "User")}</td>
-                      <td>${money(item.amount)}</td>
+                      <td>
+                        ${
+                          user?.payoutName
+                            ? escapeHTML(user.payoutName)
+                            : `<span class="muted">Not set</span>`
+                        }
+                      </td>
+                      <td>
+                        ${
+                          user?.payoutPhone
+                            ? `<span class="code-pill">${escapeHTML(user.payoutPhone)}</span>`
+                            : `<span class="muted">—</span>`
+                        }
+                      </td>
+                      <td>${money(item.amount)}</td> 
                       <td>${dateTime(item.createdAt)}</td>
                       <td>${escapeHTML(item.expectedWindow || levelWindow(item.levelAtRequest || user?.level))}</td>
                       <td>${statusBadge(item.status)}</td>
@@ -9775,3 +9895,4 @@ window.confirmRejectTraining = confirmRejectTraining;
 window.confirmRejectUpgrade = confirmRejectUpgrade;
 window.openDeleteUser = openDeleteUser;
 window.confirmDeleteUser = confirmDeleteUser;
+window.savePayoutDetails = savePayoutDetails;
