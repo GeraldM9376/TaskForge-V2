@@ -2744,7 +2744,7 @@ function renderEarnings(){
                 id="payoutName"
                 required
                 value="${escapeHTML(user.payoutName || "")}"
-                placeholder="e.g. Gerald Maina"
+                placeholder="e.g. Benson Carl"
               >
             </label>
             <label>
