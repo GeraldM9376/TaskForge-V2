@@ -642,11 +642,26 @@ function taskById(taskId){
 
 function findBid(taskId,userId){
 
-  return db().bids.find(
+  const matches = db().bids.filter(
     bid =>
       bid.taskId === taskId &&
       bid.userId === userId
-  ) || null;
+  );
+
+  if(!matches.length) return null;
+
+  /* Return the most recent bid */
+  return matches.sort(
+    (a,b) => Number(b.bidAt) - Number(a.bidAt)
+  )[0];
+}
+
+/* === NEW: bids on this task placed since it was last edited === */
+function taskBidsSinceEdit(task){
+  const since = Number(task?.updatedAt || 0);
+  return db().bids.filter(b =>
+    b.taskId === task.id && Number(b.bidAt) >= since
+  );
 }
 
 
@@ -823,41 +838,31 @@ function expireBids(){
 
 function userTaskState(taskId,userId){
 
-  const bid = findBid(
-    taskId,
-    userId
-  );
+  const bid = findBid(taskId,userId);
 
   if(!bid){
-    return {
-      status:"available",
-      bid:null
-    };
+    return { status:"available", bid:null };
+  }
+
+  /* === Allow re-bid: rejected bids make task available again === */
+  if(bid.status === "rejected" || bid.status === "available-again"){
+    return { status:"available", bid:null };
   }
 
   if(
     bid.status === "bidded" &&
     Number(bid.deadlineAt) <= Date.now()
   ){
-
     const data = db();
-
-    const actualBid = data.bids.find(
-      item => item.id === bid.id
-    );
-
+    const actualBid = data.bids.find(item => item.id === bid.id);
     if(actualBid){
       actualBid.status = "expired";
       saveDB(data);
     }
-
     bid.status = "expired";
   }
 
-  return {
-    status:bid.status,
-    bid
-  };
+  return { status:bid.status, bid };
 }
 
 
@@ -2032,10 +2037,20 @@ function placeBid(taskId){
 
   expireBids();
 
-  const existingBid = findBid(taskId, user.id);
+     const existingBid = findBid(taskId, user.id);
 
-  if(existingBid){
-    toast("You have already bid on this task.","info");
+  /* Allow re-bid if the last bid was rejected */
+  if(
+    existingBid &&
+    existingBid.status !== "rejected" &&
+    existingBid.status !== "available-again"
+  ){
+
+    toast(
+      "You have already bid on this task.",
+      "info"
+    );
+
     return;
   }
 
@@ -4839,11 +4854,7 @@ function renderAdminTasks(){
             ${
               tasks.map(task => {
 
-                const bids =
-                  db().bids.filter(
-                    bid =>
-                      bid.taskId === task.id
-                  );
+                const bids = taskBidsSinceEdit(task);
 
                 return `
                   <tr>
@@ -4871,9 +4882,13 @@ function renderAdminTasks(){
                     </td>
 
                     <td>
-                      <strong>
-                        ${bids.length}
-                      </strong>
+                      <strong>${bids.length}</strong>
+                      <div class="footer-note">
+                        ${bids.filter(b => b.status === "bidded").length} active ·
+                        ${bids.filter(b => b.status === "submitted").length} submitted ·
+                        ${bids.filter(b => b.status === "approved").length} approved
+                        ${task.updatedAt ? `<br><span style="color:#98a2b3">since last edit</span>` : ""}
+                      </div>
                     </td>
 
                     <td>
