@@ -844,8 +844,18 @@ function userTaskState(taskId,userId){
     return { status:"available", bid:null };
   }
 
-  /* === Allow re-bid: rejected bids make task available again === */
+  /* Rejected bids make task available again */
   if(bid.status === "rejected" || bid.status === "available-again"){
+    return { status:"available", bid:null };
+  }
+
+  /* === NEW: if task was edited after the user's last bid, treat as fresh === */
+  const task = db().tasks.find(t => t.id === taskId);
+  if(
+    task &&
+    Number(task.updatedAt || 0) > Number(bid.bidAt || 0) &&
+    ["submitted","approved","expired"].includes(bid.status)
+  ){
     return { status:"available", bid:null };
   }
 
@@ -2037,13 +2047,20 @@ function placeBid(taskId){
 
   expireBids();
 
-     const existingBid = findBid(taskId, user.id);
+       const existingBid = findBid(taskId, user.id);
 
-  /* Allow re-bid if the last bid was rejected */
+  /* === Allow re-bid if:
+       1. the last bid was rejected, OR
+       2. the task was edited after the user's last bid === */
+  const taskEditedSinceBid =
+    existingBid &&
+    Number(task.updatedAt || 0) > Number(existingBid.bidAt || 0);
+
   if(
     existingBid &&
     existingBid.status !== "rejected" &&
-    existingBid.status !== "available-again"
+    existingBid.status !== "available-again" &&
+    !taskEditedSinceBid
   ){
 
     toast(
