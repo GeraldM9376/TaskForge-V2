@@ -2354,11 +2354,16 @@ function submitTask(event,taskId){
     item => item.id === taskId
   );
 
-  const bid = data.bids.find(
+    /* Get the most recent bid for this user+task */
+  const matches = data.bids.filter(
     item =>
       item.taskId === taskId &&
       item.userId === user.id
   );
+
+  const bid = matches.length
+    ? matches.sort((a,b) => Number(b.bidAt) - Number(a.bidAt))[0]
+    : null;
 
 
   if(!task || !bid){
